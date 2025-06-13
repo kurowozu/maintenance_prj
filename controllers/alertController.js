@@ -1,5 +1,6 @@
 // controllers/alertController.js
 const { pool } = require('../config/db');
+const { logActivity } = require('./activityLogController');
 
 exports.getAlerts = async (req, res) => {
     try {
@@ -85,6 +86,8 @@ exports.deleteAlert = async (req, res) => {
         if (deviceId) {
             await pool.query('UPDATE Devices SET Status = ? WHERE id = ?', ['active', deviceId]);
         }
+        // Log activity
+        if (req.user) await logActivity(req.user.id, 'DELETE', 'Alerts', alertId, `Deleted alert for device ${deviceId}`);
         res.json({ message: 'Alert deleted successfully' });
     } catch (err) {
         console.error('Error deleting alert:', err);
@@ -110,6 +113,8 @@ exports.updateAlert = async (req, res) => {
             return res.status(404).json({ message: 'Alert not found' });
         }
         const [updatedAlert] = await pool.query('SELECT * FROM Alerts WHERE id = ?', [alertId]);
+        // Log activity
+        if (req.user) await logActivity(req.user.id, 'UPDATE', 'Alerts', alertId, `Updated alert for device ${DeviceID || alert[0].DeviceID}`);
         res.json(updatedAlert[0]);
     } catch (err) {
         console.error('Error updating alert:', err);

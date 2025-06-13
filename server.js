@@ -12,6 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const cookieParser = require('cookie-parser');
 const activityLogRoutes = require('./routes/activityLogRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -36,6 +37,7 @@ app.use('/api/technicians', technicianRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Dashboard API
 const { pool } = require('./config/db');

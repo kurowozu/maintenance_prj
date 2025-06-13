@@ -14,7 +14,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     try {
-        const { username, email, password, role } = req.body;
+        const { username, fullName, email, password, role } = req.body;
 
         // Check if user already exists
         const [existingUsers] = await pool.query('SELECT * FROM Users WHERE username = ? OR email = ?', [username, email]);
@@ -27,8 +27,8 @@ exports.createUser = async (req, res) => {
 
         // Insert new user
         const [result] = await pool.query(
-            'INSERT INTO Users (username, email, password, role) VALUES (?, ?, ?, ?)',
-            [username, email, hashedPassword, role]
+            'INSERT INTO Users (username, fullName, email, password, role) VALUES (?, ?, ?, ?, ?)',
+            [username, fullName, email, hashedPassword, role]
         );
 
         // Log activity

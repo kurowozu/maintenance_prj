@@ -1,17 +1,25 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
+const bcrypt = require('bcrypt');
 
 exports.login = async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // So sánh trực tiếp với MySQL
-        const [users] = await pool.query('SELECT * FROM Users WHERE username = ? AND password = ?', [username, password]);
+        // Query user by username only
+        const [users] = await pool.query('SELECT * FROM Users WHERE username = ?', [username]);
         if (users.length === 0) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const user = users[0];
+
+        // Compare provided password with stored hashed password
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role },
             process.env.JWT_SECRET || 'your-secret-key',

@@ -4,7 +4,12 @@ const { logActivity } = require('./activityLogController');
 const getAllTechnicians = async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Technicians');
-        res.json(rows);
+        // Map PhoneNumber to Phone for frontend compatibility and handle NULL or empty values
+        const mappedRows = rows.map(row => ({
+            ...row,
+            Phone: row.PhoneNumber && row.PhoneNumber.trim() !== '' ? row.PhoneNumber : 'Chưa có số điện thoại'
+        }));
+        res.json(mappedRows);
     } catch (error) {
         console.error('Error fetching technicians:', error);
         res.status(500).json({ message: 'Server error' });
@@ -16,7 +21,9 @@ const getTechnicianById = async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Technicians WHERE id = ?', [id]);
         if (rows.length === 0) return res.status(404).json({ message: 'Technician not found' });
-        res.json(rows[0]);
+        const technician = rows[0];
+        technician.Phone = technician.PhoneNumber && technician.PhoneNumber.trim() !== '' ? technician.PhoneNumber : 'Chưa có số điện thoại';
+        res.json(technician);
     } catch (error) {
         console.error('Error fetching technician:', error);
         res.status(500).json({ message: 'Server error' });
@@ -26,6 +33,11 @@ const getTechnicianById = async (req, res) => {
 const createTechnician = async (req, res) => {
     const { FullName, Specialization, PhoneNumber, Address, HireDate } = req.body;
     try {
+        // Check if PhoneNumber already exists
+        const [existing] = await pool.query('SELECT id FROM Technicians WHERE PhoneNumber = ?', [PhoneNumber]);
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Số điện thoại đã tồn tại' });
+        }
         const [result] = await pool.query(
             'INSERT INTO Technicians (FullName, Specialization, PhoneNumber, Address, HireDate) VALUES (?, ?, ?, ?, ?)',
             [FullName, Specialization, PhoneNumber, Address, HireDate]
@@ -40,7 +52,10 @@ const createTechnician = async (req, res) => {
 
 const updateTechnician = async (req, res) => {
     const { id } = req.params;
-    const { FullName, Specialization, PhoneNumber, Address, HireDate } = req.body;
+    let { FullName, Specialization, PhoneNumber, Address, HireDate } = req.body;
+    if (PhoneNumber == null) {
+        PhoneNumber = '';
+    }
     try {
         const [result] = await pool.query(
             'UPDATE Technicians SET FullName = ?, Specialization = ?, PhoneNumber = ?, Address = ?, HireDate = ?, UpdatedAt = CURRENT_TIMESTAMP WHERE id = ?',

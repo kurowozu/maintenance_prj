@@ -58,15 +58,18 @@ exports.createSchedule = async (req, res) => {
 
 exports.updateSchedule = async (req, res) => {
     try {
-        const { DeviceID, TechnicianID, MaintenanceType, ScheduledDate, Status, Description, Notes } = req.body;
-        const [result] = await pool.query(
-            `
-                UPDATE MaintenanceSchedules
-                SET DeviceID = ?, TechnicianID = ?, MaintenanceType = ?, ScheduledDate = ?, Status = ?, Description = ?, Notes = ?, updatedAt = NOW()
-                WHERE id = ?
-            `,
-            [DeviceID, TechnicianID ? TechnicianID : null, MaintenanceType, ScheduledDate, Status, Description, Notes, req.params.id]
-        );
+        const { DeviceID, TechnicianID, MaintenanceType, ScheduledDate, Status, Description, Notes, CompletedDate } = req.body;
+        let updateQuery = `
+            UPDATE MaintenanceSchedules
+            SET DeviceID = ?, TechnicianID = ?, MaintenanceType = ?, ScheduledDate = ?, Status = ?, Description = ?, Notes = ?, updatedAt = NOW()`;
+        let params = [DeviceID, TechnicianID ? TechnicianID : null, MaintenanceType, ScheduledDate, Status, Description, Notes];
+        if (Status === 'completed' && CompletedDate) {
+            updateQuery += ', CompletedDate = ?';
+            params.push(CompletedDate);
+        }
+        updateQuery += ' WHERE id = ?';
+        params.push(req.params.id);
+        const [result] = await pool.query(updateQuery, params);
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Schedule not found' });
         }
